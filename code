@@ -1,0 +1,113 @@
+Sub stockerchange()
+    Dim sh As Worksheet
+    Dim WorksheetName As String
+    Dim i As Long
+    Dim j As Long
+    Dim TickCount As Long
+    Dim LastRowA As Long
+    Dim LastRowI As Long
+    Dim PerChange As Double
+    Dim GreatIncr As Double
+    Dim GreatDecr As Double
+    Dim GreatVol As Double
+
+    For Each sh In Worksheets
+        ' Get the WorksheetName
+        WorksheetName = sh.Name
+        
+        ' Create column headers
+        sh.Cells(1, 9).Value = "Ticker"
+        sh.Cells(1, 10).Value = "Yearly Change"
+        sh.Cells(1, 11).Value = "Percent Change"
+        sh.Cells(1, 12).Value = "Total Stock Volume"
+        sh.Cells(1, 16).Value = "Ticker"
+        sh.Cells(1, 17).Value = "Value"
+        sh.Cells(2, 15).Value = "Greatest % Increase"
+        sh.Cells(3, 15).Value = "Greatest % Decrease"
+        sh.Cells(4, 15).Value = "Greatest Total Volume"
+        
+        ' Set Ticker Counter to first row
+        TickCount = 2
+        
+        ' Set start row to 2
+        j = 2
+        
+        ' Find the last non-blank cell in column A
+        LastRowA = sh.Cells(sh.Rows.Count, 1).End(xlUp).Row
+        
+        ' Loop through all rows
+        For i = 2 To LastRowA
+            ' Check if ticker name changed
+            If sh.Cells(i + 1, 1).Value <> sh.Cells(i, 1).Value Then
+                ' Write ticker in column I (#9)
+                sh.Cells(TickCount, 9).Value = sh.Cells(i, 1).Value
+                
+                ' Calculate and write Yearly Change in column J (#10)
+                sh.Cells(TickCount, 10).Value = sh.Cells(i, 6).Value - sh.Cells(j, 3).Value
+                
+                ' Conditional formatting
+                If sh.Cells(TickCount, 10).Value < 0 Then
+                    ' Set cell background color to red
+                    sh.Cells(TickCount, 10).Interior.ColorIndex = 3
+                Else
+                    ' Set cell background color to green
+                    sh.Cells(TickCount, 10).Interior.ColorIndex = 4
+                End If
+                
+                ' Calculate and write percent change in column K (#11)
+                If sh.Cells(j, 3).Value <> 0 Then
+                    PerChange = ((sh.Cells(i, 6).Value - sh.Cells(j, 3).Value) / sh.Cells(j, 3).Value) * 100
+                    sh.Cells(TickCount, 11).Value = Format(PerChange, "0.00%")
+                Else
+                    sh.Cells(TickCount, 11).Value = Format(0, "0.00%")
+                End If
+                
+                ' Calculate and write total volume in column L (#12)
+                sh.Cells(TickCount, 12).Value = Application.WorksheetFunction.Sum(sh.Range(sh.Cells(j, 7), sh.Cells(i, 7)))
+                
+                ' Increase TickCount by 1
+                TickCount = TickCount + 1
+                
+                ' Set new start row of the ticker block
+                j = i + 1
+            End If
+        Next i
+        
+        ' Find last non-blank cell in column I
+        LastRowI = sh.Cells(sh.Rows.Count, 9).End(xlUp).Row
+        
+        ' Prepare for summary
+        GreatVol = sh.Cells(2, 12).Value
+        GreatIncr = sh.Cells(2, 11).Value
+        GreatDecr = sh.Cells(2, 11).Value
+        
+        ' Loop for summary
+        For i = 2 To LastRowI
+            ' For greatest total volume
+            If sh.Cells(i, 12).Value > GreatVol Then
+                GreatVol = sh.Cells(i, 12).Value
+                sh.Cells(4, 16).Value = sh.Cells(i, 9).Value
+            End If
+            
+            ' For greatest increase
+            If sh.Cells(i, 11).Value > GreatIncr Then
+                GreatIncr = sh.Cells(i, 11).Value
+                sh.Cells(2, 16).Value = sh.Cells(i, 9).Value
+            End If
+            
+            ' For greatest decrease
+            If sh.Cells(i, 11).Value < GreatDecr Then
+                GreatDecr = sh.Cells(i, 11).Value
+                sh.Cells(3, 16).Value = sh.Cells(i, 9).Value
+            End If
+        Next i
+        
+        ' Write summary results
+        sh.Cells(2, 17).Value = Format(GreatIncr, "0.00%")
+        sh.Cells(3, 17).Value = Format(GreatDecr, "0.00%")
+        sh.Cells(4, 17).Value = Format(GreatVol, "0.00E+00")
+        
+        ' Adjust column width automatically
+        sh.Columns("A:Z").AutoFit
+    Next sh
+End Sub
